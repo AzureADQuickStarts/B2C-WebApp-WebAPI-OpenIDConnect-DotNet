@@ -17,7 +17,7 @@ using TaskWebApp.Utils;
 
 namespace TaskService.Controllers
 {
-    [PolicyAuthorize(Policy = "b2c_1_sign_in_v2")]
+    [PolicyAuthorize(Policy = "{Enter the name of your sign in policy, e.g. b2c_1_my_sign_in}")]
     public class TasksController : Controller
     {
         private static string serviceUrl = ConfigurationManager.AppSettings["ida:TodoServiceUrl"];

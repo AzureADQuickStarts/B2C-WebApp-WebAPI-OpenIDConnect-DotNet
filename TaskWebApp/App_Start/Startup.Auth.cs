@@ -45,7 +45,7 @@ namespace TaskWebApp
 
             OpenIdConnectAuthenticationOptions options = new OpenIdConnectAuthenticationOptions
             {
-                // Standard OWIN OIDC parameters
+                // Standard OWIN OpenID Connect parameters
                 ClientId = clientId,
                 RedirectUri = redirectUri,
                 PostLogoutRedirectUri = redirectUri,
@@ -57,6 +57,9 @@ namespace TaskWebApp
 
                 // Required for AAD B2C
                 Scope = "openid offline_access",
+
+                // The PolicyConfigurationManager takes care of getting the correct Azure AD authentication
+                // endpoints from the OpenID Connect metadata endpoint.  It is included in the PolicyAuthHelpers folder.
                 ConfigurationManager = new PolicyConfigurationManager(String.Format(aadInstance, tenant, "/v2.0", discoverySuffix)),
 
                 // Optional - used for displaying the user's name in the navigation bar when signed in.
@@ -66,7 +69,9 @@ namespace TaskWebApp
                 },
             };
 
-            // Required for AAD B2C
+            // The PolicyOpenIdConnectAuthenticationMiddleware is a small extension of the default OpenIdConnectMiddleware
+            // included in OWIN.  It is included in this sample in the PolicyAuthHelpers folder, along with a few other
+            // supplementary classes related to policies.
             app.Use(typeof(PolicyOpenIdConnectAuthenticationMiddleware), app, options);
                 
         }
@@ -83,6 +88,7 @@ namespace TaskWebApp
             // We don't care which policy is used to access the TaskService, so let's use the most recent policy
             string mostRecentPolicy = notification.AuthenticationTicket.Identity.FindFirst(Startup.AcrClaimType).Value;
 
+            // The Authentication Context is ADAL's primary class, which represents your connection to your B2C directory
             // ADAL uses an in-memory token cache by default.  In this case, we've extended the default cache to use a simple per-user session cache
             AuthenticationContext authContext = new AuthenticationContext(authority, new NaiveSessionCache(userObjectID));
 

@@ -14,7 +14,7 @@ namespace TaskWebApp.Controllers
             return View();
         }
 
-        [PolicyAuthorize(Policy = "b2c_1_sign_in_v2")]
+        [PolicyAuthorize(Policy = "{Enter the name of your sign in policy, e.g. b2c_1_my_sign_in}")]
         public ActionResult Claims()
         {
             ViewBag.Message = "Your application description page.";
