@@ -20,7 +20,7 @@ namespace TaskService.Controllers
     [PolicyAuthorize(Policy = "{Enter the name of your sign in policy, e.g. b2c_1_my_sign_in}")]
     public class TasksController : Controller
     {
-        private static string serviceUrl = ConfigurationManager.AppSettings["ida:TodoServiceUrl"];
+        private static string serviceUrl = ConfigurationManager.AppSettings["api:TaskServiceUrl"];
 
         // GET: TodoList
         public async Task<ActionResult> Index()

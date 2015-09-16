@@ -17,13 +17,15 @@ using TaskWebApp.Policies;
 using TaskWebApp.Utils;
 using Microsoft.Experimental.IdentityModel.Clients.ActiveDirectory;
 using System.Globalization;
+using System.Threading;
 
 namespace TaskWebApp
 {
 	public partial class Startup
 	{
-        private const string discoverySuffix = "/.well-known/openid-configuration";
         public const string AcrClaimType = "http://schemas.microsoft.com/claims/authnclassreference";
+        public const string PolicyKey = "b2cpolicy";
+        public const string OIDCMetadataSuffix = "/.well-known/openid-configuration";
 
         // App config settings
         public static string clientId = ConfigurationManager.AppSettings["ida:ClientId"];
@@ -45,35 +47,48 @@ namespace TaskWebApp
 
             OpenIdConnectAuthenticationOptions options = new OpenIdConnectAuthenticationOptions
             {
-                // Standard OWIN OpenID Connect parameters
+                // These are standard OpenID Connect parameters, with values pulled from web.config
                 ClientId = clientId,
                 RedirectUri = redirectUri,
                 PostLogoutRedirectUri = redirectUri,
                 Notifications = new OpenIdConnectAuthenticationNotifications
-                { 
+                {
                     AuthenticationFailed = OnAuthenticationFailed,
+                    RedirectToIdentityProvider = OnRedirectToIdentityProvider,
                     AuthorizationCodeReceived = OnAuthorizationCodeReceived,
                 },
-
-                // Required for AAD B2C
                 Scope = "openid offline_access",
 
                 // The PolicyConfigurationManager takes care of getting the correct Azure AD authentication
                 // endpoints from the OpenID Connect metadata endpoint.  It is included in the PolicyAuthHelpers folder.
-                ConfigurationManager = new PolicyConfigurationManager(String.Format(aadInstance, tenant, "/v2.0", discoverySuffix)),
+                ConfigurationManager = new PolicyConfigurationManager(
+                    String.Format(CultureInfo.InvariantCulture, aadInstance, tenant, "/v2.0", OIDCMetadataSuffix),
+                    new string[] { SignUpPolicyId, SignInPolicyId, ProfilePolicyId }),
 
-                // Optional - used for displaying the user's name in the navigation bar when signed in.
+                // This piece is optional - it is used for displaying the user's name in the navigation bar.
                 TokenValidationParameters = new System.IdentityModel.Tokens.TokenValidationParameters
-                {  
+                {
                     NameClaimType = "name",
                 },
             };
 
-            // The PolicyOpenIdConnectAuthenticationMiddleware is a small extension of the default OpenIdConnectMiddleware
-            // included in OWIN.  It is included in this sample in the PolicyAuthHelpers folder, along with a few other
-            // supplementary classes related to policies.
-            app.Use(typeof(PolicyOpenIdConnectAuthenticationMiddleware), app, options);
-                
+            app.UseOpenIdConnectAuthentication(options);
+        }
+
+        // This notification can be used to manipulate the OIDC request before it is sent.  Here we use it to send the correct policy.
+        private async Task OnRedirectToIdentityProvider(RedirectToIdentityProviderNotification<OpenIdConnectMessage, OpenIdConnectAuthenticationOptions> notification)
+        {
+            PolicyConfigurationManager mgr = notification.Options.ConfigurationManager as PolicyConfigurationManager;
+            if (notification.ProtocolMessage.RequestType == OpenIdConnectRequestType.LogoutRequest)
+            {
+                OpenIdConnectConfiguration config = await mgr.GetConfigurationByPolicyAsync(CancellationToken.None, notification.OwinContext.Authentication.AuthenticationResponseRevoke.Properties.Dictionary[Startup.PolicyKey]);
+                notification.ProtocolMessage.IssuerAddress = config.EndSessionEndpoint;
+            }
+            else
+            {
+                OpenIdConnectConfiguration config = await mgr.GetConfigurationByPolicyAsync(CancellationToken.None, notification.OwinContext.Authentication.AuthenticationResponseChallenge.Properties.Dictionary[Startup.PolicyKey]);
+                notification.ProtocolMessage.IssuerAddress = config.AuthorizationEndpoint;
+            }
         }
 
         private async Task OnAuthorizationCodeReceived(AuthorizationCodeReceivedNotification notification)

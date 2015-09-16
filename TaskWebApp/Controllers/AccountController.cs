@@ -22,18 +22,30 @@ namespace TaskWebApp.Controllers
         {
             if (!Request.IsAuthenticated)
             {
-                Response.Headers.Add(PolicyOpenIdConnectAuthenticationHandler.PolicyKey, Startup.SignInPolicyId);
                 HttpContext.GetOwinContext().Authentication.Challenge(
-                    new AuthenticationProperties { RedirectUri = "/" }, OpenIdConnectAuthenticationDefaults.AuthenticationType);
+                    new AuthenticationProperties(
+                        new Dictionary<string, string> 
+                        { 
+                            {Startup.PolicyKey, Startup.SignInPolicyId}
+                        })
+                    {
+                        RedirectUri = "/",
+                    }, OpenIdConnectAuthenticationDefaults.AuthenticationType);
             }
         }
         public void SignUp()
         {
             if (!Request.IsAuthenticated)
             {
-                Response.Headers.Add(PolicyOpenIdConnectAuthenticationHandler.PolicyKey, Startup.SignUpPolicyId);
                 HttpContext.GetOwinContext().Authentication.Challenge(
-                    new AuthenticationProperties { RedirectUri = "/" }, OpenIdConnectAuthenticationDefaults.AuthenticationType);
+                    new AuthenticationProperties(
+                        new Dictionary<string, string> 
+                        { 
+                            {Startup.PolicyKey, Startup.SignUpPolicyId}
+                        })
+                    {
+                        RedirectUri = "/",
+                    }, OpenIdConnectAuthenticationDefaults.AuthenticationType);
             }
         }
 
@@ -42,9 +54,15 @@ namespace TaskWebApp.Controllers
         {
             if (Request.IsAuthenticated)
             {
-                Response.Headers.Add(PolicyOpenIdConnectAuthenticationHandler.PolicyKey, Startup.ProfilePolicyId);
                 HttpContext.GetOwinContext().Authentication.Challenge(
-                    new AuthenticationProperties { RedirectUri = "/" }, OpenIdConnectAuthenticationDefaults.AuthenticationType);
+                    new AuthenticationProperties(
+                        new Dictionary<string, string> 
+                        { 
+                            {Startup.PolicyKey, Startup.ProfilePolicyId}
+                        })
+                    {
+                        RedirectUri = "/",
+                    }, OpenIdConnectAuthenticationDefaults.AuthenticationType);
             }
         }
 
@@ -58,8 +76,12 @@ namespace TaskWebApp.Controllers
                 AuthenticationContext authContext = new AuthenticationContext(authority, new NaiveSessionCache(userObjectID));
                 authContext.TokenCache.Clear();
 
-                Response.Headers.Add(PolicyOpenIdConnectAuthenticationHandler.PolicyKey, ClaimsPrincipal.Current.FindFirst(Startup.AcrClaimType).Value);
-                HttpContext.GetOwinContext().Authentication.SignOut(OpenIdConnectAuthenticationDefaults.AuthenticationType, CookieAuthenticationDefaults.AuthenticationType);
+                HttpContext.GetOwinContext().Authentication.SignOut(
+                new AuthenticationProperties(
+                    new Dictionary<string, string> 
+                    { 
+                        {Startup.PolicyKey, ClaimsPrincipal.Current.FindFirst(Startup.AcrClaimType).Value}
+                    }), OpenIdConnectAuthenticationDefaults.AuthenticationType, CookieAuthenticationDefaults.AuthenticationType);
             }
             
         }
