@@ -83,7 +83,8 @@ namespace TaskWebApp
                 TokenValidationParameters = new TokenValidationParameters
                 {
                     NameClaimType = "name",
-                    SaveSigninToken = true,
+                    
+                    // TODO: Tell the middleware to save the sign in token for later use
                 },
             };
         }

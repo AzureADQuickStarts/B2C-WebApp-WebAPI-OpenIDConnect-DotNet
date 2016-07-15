@@ -23,32 +23,11 @@ namespace TaskService.Controllers
         {
             try { 
 
-                var bootstrapContext = ClaimsPrincipal.Current.Identities.First().BootstrapContext as System.IdentityModel.Tokens.BootstrapContext;
+                // TODO: Get the BootstrapContext in order to access the sign in token
 
-                HttpClient client = new HttpClient();
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, serviceUrl + "/api/tasks");
+                // TODO: Attach the sign in token to the outgoing request
 
-                // Add the token acquired from ADAL to the request headers
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bootstrapContext.Token);
-                HttpResponseMessage response = await client.SendAsync(request);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    String responseString = await response.Content.ReadAsStringAsync();
-                    JArray tasks = JArray.Parse(responseString);
-                    ViewBag.Tasks = tasks;
-                    return View();
-                }
-                else
-                {
-                    // If the call failed with access denied, show the user an error indicating they might need to sign-in again.
-                    if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                    {
-                        return new RedirectResult("/Error?message=Error: " + response.ReasonPhrase + " You might need to sign in again.");
-                    }
-                }
-
-                return new RedirectResult("/Error?message=An Error Occurred Reading To Do List: " + response.StatusCode);
+                // TODO: Call the task web API to get tokens
             }
             catch (Exception ex)
             {
@@ -98,28 +77,7 @@ namespace TaskService.Controllers
         {
             try
             {
-                var bootstrapContext = ClaimsPrincipal.Current.Identities.First().BootstrapContext as System.IdentityModel.Tokens.BootstrapContext;
-
-                HttpClient client = new HttpClient();
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, serviceUrl + "/api/tasks/" + id);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bootstrapContext.Token);
-                HttpResponseMessage response = await client.SendAsync(request);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return new RedirectResult("/Tasks");
-                }
-                else
-                {
-                    // If the call failed with access denied, then drop the current access token from the cache, 
-                    // and show the user an error indicating they might need to sign-in again.
-                    if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                    {
-                        return new RedirectResult("/Error?message=Error: " + response.ReasonPhrase + " You might need to sign in again.");
-                    }
-                }
-
-                return new RedirectResult("/Error?message=Error deleting your To-Do Item.");
+                // TODO: Get a token and call the web API to delete tasks
             }
             catch (Exception ex)
             {
